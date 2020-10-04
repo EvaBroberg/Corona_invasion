@@ -4,6 +4,7 @@ import pygame
 from settings import Settings
 from doctor import Doctor
 from vaccine import Vaccine
+from virus import Virus
 
 class CoronaInvasion:
     """Manage game assets and behaviour."""
@@ -21,6 +22,9 @@ class CoronaInvasion:
 
         self.doctor  = Doctor(self)
         self.vaccine = pygame.sprite.Group()
+        self.virus   = pygame.sprite.Group()
+
+        self._create_fleet()
 
         # Set background colour.
         self.bg_color = (230, 230, 230)
@@ -77,7 +81,35 @@ class CoronaInvasion:
         for vaccine in self.vaccine.copy():
             if vaccine.rect.bottom <= 0:
                 self.vaccine.remove(vaccine)
-    
+
+    def _create_fleet(self):
+        """Create a fleet of virus."""
+        # Create a virus and find a number of virus in the row.
+        # Spacing between each virus is equal to one virus width.
+        virus = Virus(self)
+        virus_width, virus_height = virus.rect.size
+        available_space_x         = self.settings.screen_width - (2 * virus_width)
+        number_virus_x            = available_space_x // (2 * virus_width)
+
+        # Determine the number of virus rows that fir to the screen.
+        doctor_height     = self.doctor.rect.height 
+        available_space_y = (self.settings.screen_height - (3 * virus_height) - doctor_height)
+        number_rows       = available_space_y // (2 * virus_height)
+
+        # Create full fleet of virus.
+        for row_number in range(number_rows):
+            for virus_number in range(number_virus_x):
+                self._create_virus(virus_number, row_number)
+
+    def _create_virus(self, virus_number, row_number):
+        """Create virus and place it in the row"""
+        virus                      = Virus(self)
+        virus_width, virus_height  = virus.rect.size
+        virus.x                    = virus_width + 2 * virus_width * virus_number
+        virus.rect.x               = virus.x 
+        virus.rect.y               = virus.rect.height + 2 * virus.rect.height * row_number
+
+        self.virus.add(virus)
 
     def _update_screen(self):
         """Update images on the screen and flip to new screen."""
@@ -85,6 +117,7 @@ class CoronaInvasion:
         self.doctor.blitme()
         for vaccine in self.vaccine.sprites():
             vaccine.draw_vaccine()
+        self.virus.draw(self.screen)
 
         # Make the most recently drawn screen visible.
         pygame.display.flip()
